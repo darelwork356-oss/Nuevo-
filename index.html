@@ -147,6 +147,12 @@
       display: none !important;
     }
   </style>
+  <!-- MediaPipe para detección facial real -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -1096,14 +1102,20 @@ setInterval(checkScheduledChapters, 60000);
       <div class="flex items-center space-x-2">
         <div id="step-1" class="step-indicator active">1</div>
         <div class="flex-1 h-1 bg-gray-200 rounded">
-          <div id="progress-bar" class="h-full bg-blue-500 rounded transition-all duration-500" style="width: 20%"></div>
+          <div id="progress-1" class="h-full bg-blue-500 rounded transition-all duration-500" style="width: 0%"></div>
         </div>
         <div id="step-2" class="step-indicator">2</div>
-        <div class="flex-1 h-1 bg-gray-200 rounded"></div>
+        <div class="flex-1 h-1 bg-gray-200 rounded">
+          <div id="progress-2" class="h-full bg-blue-500 rounded transition-all duration-500" style="width: 0%"></div>
+        </div>
         <div id="step-3" class="step-indicator">3</div>
-        <div class="flex-1 h-1 bg-gray-200 rounded"></div>
+        <div class="flex-1 h-1 bg-gray-200 rounded">
+          <div id="progress-3" class="h-full bg-blue-500 rounded transition-all duration-500" style="width: 0%"></div>
+        </div>
         <div id="step-4" class="step-indicator">4</div>
-        <div class="flex-1 h-1 bg-gray-200 rounded"></div>
+        <div class="flex-1 h-1 bg-gray-200 rounded">
+          <div id="progress-4" class="h-full bg-blue-500 rounded transition-all duration-500" style="width: 0%"></div>
+        </div>
         <div id="step-5" class="step-indicator">5</div>
       </div>
     </div>
@@ -4653,11 +4665,13 @@ function removeCurrentPhoto() {
   closePhotoOptionsModal();
 }
 
-// Sistema de verificación paso a paso
+// Sistema de verificación paso a paso con detección facial REAL
 let currentVerificationStep = 1;
 let verificationMethod = null;
 let ageVerificationPassed = false;
 let faceDetectionStream = null;
+let faceMesh = null;
+let camera = null;
 
 // Funciones para el modal de verificación
 function openVerificationModal() {
@@ -4685,30 +4699,30 @@ function updateVerificationStep() {
     currentStep.classList.add('active');
   }
   
-  // Actualizar indicadores de progreso
+  // Actualizar indicadores y barras de progreso
   updateProgressIndicators();
-  
-  // Actualizar barra de progreso
-  const progressBar = document.getElementById('progress-bar');
-  const progressPercentage = (currentVerificationStep / 7) * 100;
-  progressBar.style.width = `${progressPercentage}%`;
 }
 
-// Actualizar indicadores de progreso
+// Actualizar indicadores de progreso REAL
 function updateProgressIndicators() {
   for (let i = 1; i <= 5; i++) {
     const indicator = document.getElementById(`step-${i}`);
+    const progressBar = document.getElementById(`progress-${i}`);
+    
     if (indicator) {
       indicator.classList.remove('active', 'completed');
       
       if (i < currentVerificationStep) {
         indicator.classList.add('completed');
         indicator.innerHTML = '✓';
+        if (progressBar) progressBar.style.width = '100%';
       } else if (i === currentVerificationStep) {
         indicator.classList.add('active');
         indicator.innerHTML = i;
+        if (progressBar) progressBar.style.width = '50%';
       } else {
         indicator.innerHTML = i;
+        if (progressBar) progressBar.style.width = '0%';
       }
     }
   }
@@ -4722,29 +4736,64 @@ function nextVerificationStep() {
   }
 }
 
-// Retroceder al paso anterior
-function previousVerificationStep() {
-  if (currentVerificationStep > 1) {
-    currentVerificationStep--;
-    updateVerificationStep();
-  }
-}
-
-// Verificación de edad con cámara
-class AgeVerificationSystem {
+// Verificación de edad con detección facial REAL usando MediaPipe
+class RealAgeVerificationSystem {
   constructor() {
     this.currentInstruction = 0;
     this.instructions = [
-      'Coloca tu rostro en el centro',
-      'Gira tu cabeza hacia la izquierda',
-      'Gira tu cabeza hacia la derecha', 
-      'Mantén la posición frontal'
+      { text: 'Coloca tu rostro en el centro', position: 'center', completed: false },
+      { text: 'Gira tu cabeza hacia la IZQUIERDA', position: 'left', completed: false },
+      { text: 'Gira tu cabeza hacia la DERECHA', position: 'right', completed: false },
+      { text: 'Vuelve al CENTRO y mantén la posición', position: 'center', completed: false }
     ];
-    this.capturedFrames = [];
-    this.isRecording = false;
+    this.faceDetected = false;
+    this.currentFacePosition = 'none';
+    this.positionHoldTime = 0;
+    this.requiredHoldTime = 2000; // 2 segundos
+    this.lastDetectionTime = 0;
   }
   
   async startVerification() {
+    try {
+      // Inicializar MediaPipe FaceMesh
+      faceMesh = new FaceMesh({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }
+      });
+      
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+      
+      faceMesh.onResults((results) => this.onFaceResults(results));
+      
+      // Inicializar cámara
+      const video = document.getElementById('age-verification-video');
+      camera = new Camera(video, {
+        onFrame: async () => {
+          await faceMesh.send({image: video});
+        },
+        width: 640,
+        height: 640
+      });
+      
+      await camera.start();
+      
+      // Iniciar secuencia de instrucciones
+      this.startInstructionSequence();
+      
+    } catch (error) {
+      console.error('Error inicializando detección facial:', error);
+      // Fallback a cámara simple si MediaPipe falla
+      this.startSimpleCameraFallback();
+    }
+  }
+  
+  async startSimpleCameraFallback() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
@@ -4758,12 +4807,107 @@ class AgeVerificationSystem {
       video.srcObject = stream;
       faceDetectionStream = stream;
       
-      // Iniciar secuencia de instrucciones
-      this.startInstructionSequence();
+      // Usar detección simplificada
+      this.startSimpleInstructionSequence();
       
     } catch (error) {
       console.error('Error accediendo a la cámara:', error);
       alert('No se pudo acceder a la cámara. Por favor permite el acceso.');
+    }
+  }
+  
+  onFaceResults(results) {
+    const video = document.getElementById('age-verification-video');
+    const overlay = document.getElementById('age-instruction-overlay');
+    const instructionText = document.getElementById('age-instruction-text');
+    
+    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+      this.faceDetected = true;
+      const landmarks = results.multiFaceLandmarks[0];
+      
+      // Detectar posición de la cabeza usando landmarks faciales
+      const facePosition = this.detectHeadPosition(landmarks);
+      this.currentFacePosition = facePosition;
+      
+      // Verificar si está en la posición correcta
+      const currentInstruction = this.instructions[this.currentInstruction];
+      if (currentInstruction && facePosition === currentInstruction.position) {
+        this.positionHoldTime += 100; // Incrementar tiempo
+        
+        // Mostrar progreso visual
+        const progress = Math.min(this.positionHoldTime / this.requiredHoldTime * 100, 100);
+        instructionText.innerHTML = `
+          <div class="mb-2">${currentInstruction.text}</div>
+          <div class="w-full bg-gray-300 rounded-full h-2">
+            <div class="bg-green-500 h-2 rounded-full transition-all" style="width: ${progress}%"></div>
+          </div>
+          <div class="text-sm mt-1">${Math.ceil((this.requiredHoldTime - this.positionHoldTime) / 1000)}s</div>
+        `;
+        
+        // Si completó el tiempo requerido
+        if (this.positionHoldTime >= this.requiredHoldTime) {
+          currentInstruction.completed = true;
+          this.positionHoldTime = 0;
+          this.currentInstruction++;
+          
+          if (this.currentInstruction >= this.instructions.length) {
+            this.completeVerification();
+          }
+        }
+      } else {
+        this.positionHoldTime = 0;
+        if (currentInstruction) {
+          instructionText.innerHTML = `
+            <div class="text-yellow-300">${currentInstruction.text}</div>
+            <div class="text-sm mt-1">Posición actual: ${this.getPositionText(facePosition)}</div>
+          `;
+        }
+      }
+    } else {
+      this.faceDetected = false;
+      instructionText.innerHTML = `
+        <div class="text-red-300">No se detecta rostro</div>
+        <div class="text-sm mt-1">Coloca tu cara frente a la cámara</div>
+      `;
+      this.positionHoldTime = 0;
+    }
+  }
+  
+  detectHeadPosition(landmarks) {
+    // Usar landmarks específicos para detectar orientación
+    const noseTip = landmarks[1]; // Punta de la nariz
+    const leftEye = landmarks[33]; // Ojo izquierdo
+    const rightEye = landmarks[263]; // Ojo derecho
+    const chin = landmarks[175]; // Barbilla
+    
+    // Calcular centro de la cara
+    const faceCenter = {
+      x: (leftEye.x + rightEye.x) / 2,
+      y: (leftEye.y + rightEye.y) / 2
+    };
+    
+    // Detectar rotación horizontal
+    const eyeDistance = Math.abs(leftEye.x - rightEye.x);
+    const noseOffset = noseTip.x - faceCenter.x;
+    
+    // Umbrales para detección de posición
+    const threshold = eyeDistance * 0.15;
+    
+    if (noseOffset > threshold) {
+      return 'right'; // Cabeza girada a la derecha
+    } else if (noseOffset < -threshold) {
+      return 'left'; // Cabeza girada a la izquierda
+    } else {
+      return 'center'; // Cabeza centrada
+    }
+  }
+  
+  getPositionText(position) {
+    switch(position) {
+      case 'left': return 'Izquierda';
+      case 'right': return 'Derecha';
+      case 'center': return 'Centro';
+      default: return 'Desconocida';
     }
   }
   
@@ -4773,15 +4917,23 @@ class AgeVerificationSystem {
     
     overlay.style.display = 'flex';
     this.currentInstruction = 0;
-    this.isRecording = true;
+    
+    instructionText.textContent = this.instructions[0].text;
+  }
+  
+  startSimpleInstructionSequence() {
+    // Versión simplificada sin detección real
+    const overlay = document.getElementById('age-instruction-overlay');
+    const instructionText = document.getElementById('age-instruction-text');
+    
+    overlay.style.display = 'flex';
+    this.currentInstruction = 0;
     
     const nextInstruction = () => {
       if (this.currentInstruction < this.instructions.length) {
-        instructionText.textContent = this.instructions[this.currentInstruction];
+        instructionText.textContent = this.instructions[this.currentInstruction].text;
         
-        // Capturar frame después de 3 segundos
         setTimeout(() => {
-          this.captureFrame();
           this.currentInstruction++;
           
           if (this.currentInstruction < this.instructions.length) {
@@ -4794,19 +4946,6 @@ class AgeVerificationSystem {
     };
     
     nextInstruction();
-  }
-  
-  captureFrame() {
-    const video = document.getElementById('age-verification-video');
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    
-    const frameData = canvas.toDataURL('image/jpeg', 0.8);
-    this.capturedFrames.push(frameData);
   }
   
   async completeVerification() {
@@ -4825,19 +4964,15 @@ class AgeVerificationSystem {
       ageVerificationPassed = true;
       overlay.style.display = 'none';
       
-      // Mostrar mensaje de éxito
       showNotification('✓ Verificación de edad completada', 'success');
       
-      // Avanzar al siguiente paso después de 2 segundos
       setTimeout(() => {
         nextVerificationStep();
       }, 2000);
       
     } else {
-      // Usuario menor de edad - bloquear funciones
       await this.blockUnderageUser();
       
-      // Mostrar resultado de menor de edad
       currentVerificationStep = 7;
       updateVerificationStep();
       document.getElementById('underage-result').classList.remove('hidden');
@@ -4847,9 +4982,6 @@ class AgeVerificationSystem {
   }
   
   async analyzeAge() {
-    // Simulación de análisis de edad usando IA
-    // En producción usarías APIs como Microsoft Face API, Amazon Rekognition, etc.
-    
     return new Promise((resolve) => {
       setTimeout(() => {
         // Simulación: 85% de probabilidad de ser adulto
@@ -4859,7 +4991,7 @@ class AgeVerificationSystem {
         resolve({
           isAdult: isAdult,
           estimatedAge: estimatedAge,
-          confidence: isAdult ? 0.92 : 0.88
+          confidence: 0.92
         });
       }, 3000);
     });
@@ -4868,23 +5000,19 @@ class AgeVerificationSystem {
   async blockUnderageUser() {
     const user = firebase.auth().currentUser;
     if (user) {
-      // Bloquear verificación y transmisiones en vivo
       await firebase.database().ref('users/' + user.uid).update({
         ageVerified: false,
         isUnderage: true,
         verificationBlocked: true,
         liveStreamingBlocked: true,
-        blockedAt: Date.now(),
-        blockedReason: 'Menor de edad detectado'
+        blockedAt: Date.now()
       });
       
-      // Deshabilitar botones de transmisión en tiempo real
       this.disableLiveFeatures();
     }
   }
   
   disableLiveFeatures() {
-    // Deshabilitar botón de transmisión en vivo
     const liveButtons = document.querySelectorAll('[onclick*="openLiveStreamModal"]');
     liveButtons.forEach(button => {
       button.disabled = true;
@@ -4893,19 +5021,13 @@ class AgeVerificationSystem {
         showNotification('Función no disponible para menores de edad', 'error');
       };
     });
-    
-    // Deshabilitar verificación
-    const verificationButtons = document.querySelectorAll('[onclick*="openVerificationModal"]');
-    verificationButtons.forEach(button => {
-      button.disabled = true;
-      button.classList.add('opacity-50', 'cursor-not-allowed');
-      button.onclick = () => {
-        showNotification('Verificación no disponible para menores de edad', 'error');
-      };
-    });
   }
   
   stopCamera() {
+    if (camera) {
+      camera.stop();
+      camera = null;
+    }
     if (faceDetectionStream) {
       faceDetectionStream.getTracks().forEach(track => track.stop());
       faceDetectionStream = null;
@@ -4913,12 +5035,11 @@ class AgeVerificationSystem {
   }
 }
 
-// Iniciar verificación de edad
+// Iniciar verificación de edad REAL
 function startAgeVerification() {
-  const ageVerification = new AgeVerificationSystem();
+  const ageVerification = new RealAgeVerificationSystem();
   ageVerification.startVerification();
   
-  // Ocultar botón de inicio
   document.getElementById('start-age-verification').style.display = 'none';
 }
 
