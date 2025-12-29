@@ -8468,15 +8468,22 @@ async function likeNote(noteId) {
     authError.classList.add('hidden');
     const email = emailInput.value;
     const password = passwordInput.value;
+    
+    submitButton.disabled = true;
+    submitButton.textContent = 'Cargando...';
+    
     if (isLogin) {
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(userCredential => {
           console.log("Usuario autenticado:", userCredential.user);
+          // La transición se maneja en onAuthStateChanged
         })
         .catch(error => {
           console.error(error);
           authError.textContent = error.message;
           authError.classList.remove('hidden');
+          submitButton.disabled = false;
+          submitButton.textContent = isLogin ? 'Sign In' : 'Sign Up';
         });
     } else {
       firebase.auth().createUserWithEmailAndPassword(email, password)
@@ -8504,6 +8511,8 @@ async function likeNote(noteId) {
           console.error(error);
           authError.textContent = error.message;
           authError.classList.remove('hidden');
+          submitButton.disabled = false;
+          submitButton.textContent = isLogin ? 'Sign In' : 'Sign Up';
         });
     }
   });
@@ -8569,7 +8578,11 @@ async function likeNote(noteId) {
           return;
         }
         authFormContainer.style.display = 'none';
+        authFormContainer.style.opacity = '0';
         mainAppContainer.style.display = 'flex';
+        setTimeout(() => {
+          mainAppContainer.style.opacity = '1';
+        }, 100);
         loadStories();
         loadUserStories(user.uid);
         initializeFeedSections();
@@ -8612,7 +8625,9 @@ async function likeNote(noteId) {
       });
     } else {
       authFormContainer.style.display = 'flex';
+      authFormContainer.style.opacity = '1';
       mainAppContainer.style.display = 'none';
+      mainAppContainer.style.opacity = '0';
     }
   });
   /*********************** AUTENTICACIÓN CON GOOGLE Y FACEBOOK **************************/
