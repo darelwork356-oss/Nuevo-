@@ -1188,8 +1188,17 @@ setInterval(checkScheduledChapters, 60000);
                 </div>
               </div>
               
-              <!-- Guía circular -->
-              <div id="face-guide" class="absolute inset-4 border-4 border-white rounded-full opacity-50"></div>
+              <!-- Guía circular con animación -->
+              <div id="face-guide" class="absolute inset-4 border-4 border-white rounded-full opacity-50 animate-pulse"></div>
+              
+              <!-- Círculo de progreso animado -->
+              <div id="face-progress-circle" class="absolute inset-0 hidden">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none"/>
+                  <circle id="progress-circle" cx="50" cy="50" r="45" stroke="#10b981" stroke-width="3" fill="none" 
+                          stroke-dasharray="283" stroke-dashoffset="283" class="transition-all duration-300"/>
+                </svg>
+              </div>
             </div>
             
             <!-- Botón de cámara -->
@@ -1443,13 +1452,30 @@ setInterval(checkScheduledChapters, 60000);
           </div>
           
           <div id="underage-result" class="hidden">
-            <div class="w-24 h-24 mx-auto mb-6 bg-orange-100 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <div class="w-24 h-24 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center animate-bounce">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-12.728 12.728m0-12.728l12.728 12.728" />
               </svg>
             </div>
-            <h2 class="text-2xl font-bold text-orange-600 mb-4">Acceso Restringido</h2>
-            <p class="text-gray-600 mb-8">Debes ser mayor de 18 años para acceder a la verificación y transmisiones en vivo.</p>
+            <h2 class="text-2xl font-bold text-red-600 mb-4">Acceso Denegado</h2>
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+              <div class="flex items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="font-semibold text-red-800">Edad detectada: <span id="detected-age">--</span> años</span>
+              </div>
+              <p class="text-red-700 text-sm">Debes ser mayor de 18 años para acceder a la verificación y transmisiones en vivo.</p>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+              <h3 class="font-semibold text-yellow-800 mb-2">Funciones bloqueadas:</h3>
+              <ul class="text-sm text-yellow-700 space-y-1">
+                <li>• Verificación de identidad</li>
+                <li>• Transmisiones en vivo</li>
+                <li>• Funciones premium</li>
+              </ul>
+            </div>
+            <p class="text-gray-600 mb-8">Esta restricción se aplicará permanentemente a tu cuenta por motivos de seguridad.</p>
           </div>
           
           <button onclick="closeVerificationModal()" class="w-full bg-gray-500 text-white py-4 rounded-xl font-semibold hover:bg-gray-600 transition-colors">
@@ -4741,16 +4767,18 @@ class RealAgeVerificationSystem {
   constructor() {
     this.currentInstruction = 0;
     this.instructions = [
-      { text: 'Coloca tu rostro en el centro', position: 'center', completed: false },
-      { text: 'Gira tu cabeza hacia la IZQUIERDA', position: 'left', completed: false },
-      { text: 'Gira tu cabeza hacia la DERECHA', position: 'right', completed: false },
-      { text: 'Vuelve al CENTRO y mantén la posición', position: 'center', completed: false }
+      { text: 'Coloca tu rostro en el centro', position: 'center', completed: false, required: true },
+      { text: 'Gira tu cabeza hacia la IZQUIERDA', position: 'left', completed: false, required: true },
+      { text: 'Gira tu cabeza hacia la DERECHA', position: 'right', completed: false, required: true },
+      { text: 'Vuelve al CENTRO y mantén la posición', position: 'center', completed: false, required: true }
     ];
     this.faceDetected = false;
     this.currentFacePosition = 'none';
     this.positionHoldTime = 0;
-    this.requiredHoldTime = 2000; // 2 segundos
+    this.requiredHoldTime = 3000; // 3 segundos OBLIGATORIOS
     this.lastDetectionTime = 0;
+    this.allStepsCompleted = false;
+    this.detectedAge = null;
   }
   
   async startVerification() {
@@ -4765,8 +4793,8 @@ class RealAgeVerificationSystem {
       faceMesh.setOptions({
         maxNumFaces: 1,
         refineLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7
       });
       
       faceMesh.onResults((results) => this.onFaceResults(results));
@@ -4793,33 +4821,12 @@ class RealAgeVerificationSystem {
     }
   }
   
-  async startSimpleCameraFallback() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'user',
-          width: { ideal: 640 },
-          height: { ideal: 640 }
-        } 
-      });
-      
-      const video = document.getElementById('age-verification-video');
-      video.srcObject = stream;
-      faceDetectionStream = stream;
-      
-      // Usar detección simplificada
-      this.startSimpleInstructionSequence();
-      
-    } catch (error) {
-      console.error('Error accediendo a la cámara:', error);
-      alert('No se pudo acceder a la cámara. Por favor permite el acceso.');
-    }
-  }
-  
   onFaceResults(results) {
     const video = document.getElementById('age-verification-video');
     const overlay = document.getElementById('age-instruction-overlay');
     const instructionText = document.getElementById('age-instruction-text');
+    const progressCircle = document.getElementById('face-progress-circle');
+    const circle = document.getElementById('progress-circle');
     
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
       this.faceDetected = true;
@@ -4829,47 +4836,77 @@ class RealAgeVerificationSystem {
       const facePosition = this.detectHeadPosition(landmarks);
       this.currentFacePosition = facePosition;
       
+      // Mostrar círculo de progreso
+      progressCircle.classList.remove('hidden');
+      
       // Verificar si está en la posición correcta
       const currentInstruction = this.instructions[this.currentInstruction];
-      if (currentInstruction && facePosition === currentInstruction.position) {
+      if (currentInstruction && facePosition === currentInstruction.position && !currentInstruction.completed) {
         this.positionHoldTime += 100; // Incrementar tiempo
         
+        // Actualizar círculo de progreso
+        const progress = Math.min(this.positionHoldTime / this.requiredHoldTime, 1);
+        const circumference = 283;
+        const offset = circumference - (progress * circumference);
+        circle.style.strokeDashoffset = offset;
+        circle.style.stroke = progress < 1 ? '#f59e0b' : '#10b981';
+        
         // Mostrar progreso visual
-        const progress = Math.min(this.positionHoldTime / this.requiredHoldTime * 100, 100);
+        const timeLeft = Math.ceil((this.requiredHoldTime - this.positionHoldTime) / 1000);
         instructionText.innerHTML = `
-          <div class="mb-2">${currentInstruction.text}</div>
-          <div class="w-full bg-gray-300 rounded-full h-2">
-            <div class="bg-green-500 h-2 rounded-full transition-all" style="width: ${progress}%"></div>
-          </div>
-          <div class="text-sm mt-1">${Math.ceil((this.requiredHoldTime - this.positionHoldTime) / 1000)}s</div>
+          <div class="mb-2 text-green-300 font-bold">✓ ${currentInstruction.text}</div>
+          <div class="text-lg font-bold text-white">${timeLeft}s</div>
+          <div class="text-sm mt-1 text-green-200">Manteniendo posición...</div>
         `;
         
         // Si completó el tiempo requerido
         if (this.positionHoldTime >= this.requiredHoldTime) {
           currentInstruction.completed = true;
           this.positionHoldTime = 0;
-          this.currentInstruction++;
           
-          if (this.currentInstruction >= this.instructions.length) {
-            this.completeVerification();
-          }
+          // Efecto visual de completado
+          circle.style.stroke = '#10b981';
+          instructionText.innerHTML = `
+            <div class="text-green-300 font-bold text-xl">✓ ¡COMPLETADO!</div>
+            <div class="text-sm mt-1 text-green-200">Paso ${this.currentInstruction + 1} de ${this.instructions.length}</div>
+          `;
+          
+          setTimeout(() => {
+            this.currentInstruction++;
+            
+            if (this.currentInstruction >= this.instructions.length) {
+              this.allStepsCompleted = true;
+              this.completeVerification();
+            } else {
+              // Resetear para siguiente instrucción
+              circle.style.strokeDashoffset = '283';
+              circle.style.stroke = '#6b7280';
+            }
+          }, 1500);
         }
       } else {
         this.positionHoldTime = 0;
-        if (currentInstruction) {
+        circle.style.strokeDashoffset = '283';
+        circle.style.stroke = '#6b7280';
+        
+        if (currentInstruction && !currentInstruction.completed) {
           instructionText.innerHTML = `
-            <div class="text-yellow-300">${currentInstruction.text}</div>
-            <div class="text-sm mt-1">Posición actual: ${this.getPositionText(facePosition)}</div>
+            <div class="text-yellow-300 font-bold">${currentInstruction.text}</div>
+            <div class="text-sm mt-2 text-white">Posición actual: <span class="font-bold">${this.getPositionText(facePosition)}</span></div>
+            <div class="text-xs mt-1 text-gray-300">Necesitas: <span class="font-bold">${this.getPositionText(currentInstruction.position)}</span></div>
           `;
         }
       }
     } else {
       this.faceDetected = false;
-      instructionText.innerHTML = `
-        <div class="text-red-300">No se detecta rostro</div>
-        <div class="text-sm mt-1">Coloca tu cara frente a la cámara</div>
-      `;
       this.positionHoldTime = 0;
+      progressCircle.classList.add('hidden');
+      
+      instructionText.innerHTML = `
+        <div class="text-red-300 font-bold text-lg">⚠ No se detecta rostro</div>
+        <div class="text-sm mt-2 text-white">Coloca tu cara frente a la cámara</div>
+        <div class="text-xs mt-1 text-gray-300">Asegúrate de tener buena iluminación</div>
+      `;
     }
   }
   
@@ -4878,7 +4915,6 @@ class RealAgeVerificationSystem {
     const noseTip = landmarks[1]; // Punta de la nariz
     const leftEye = landmarks[33]; // Ojo izquierdo
     const rightEye = landmarks[263]; // Ojo derecho
-    const chin = landmarks[175]; // Barbilla
     
     // Calcular centro de la cara
     const faceCenter = {
@@ -4890,8 +4926,8 @@ class RealAgeVerificationSystem {
     const eyeDistance = Math.abs(leftEye.x - rightEye.x);
     const noseOffset = noseTip.x - faceCenter.x;
     
-    // Umbrales para detección de posición
-    const threshold = eyeDistance * 0.15;
+    // Umbrales más estrictos para detección de posición
+    const threshold = eyeDistance * 0.2;
     
     if (noseOffset > threshold) {
       return 'right'; // Cabeza girada a la derecha
@@ -4904,9 +4940,9 @@ class RealAgeVerificationSystem {
   
   getPositionText(position) {
     switch(position) {
-      case 'left': return 'Izquierda';
-      case 'right': return 'Derecha';
-      case 'center': return 'Centro';
+      case 'left': return 'Izquierda ←';
+      case 'right': return 'Derecha →';
+      case 'center': return 'Centro •';
       default: return 'Desconocida';
     }
   }
@@ -4918,108 +4954,130 @@ class RealAgeVerificationSystem {
     overlay.style.display = 'flex';
     this.currentInstruction = 0;
     
-    instructionText.textContent = this.instructions[0].text;
-  }
-  
-  startSimpleInstructionSequence() {
-    // Versión simplificada sin detección real
-    const overlay = document.getElementById('age-instruction-overlay');
-    const instructionText = document.getElementById('age-instruction-text');
-    
-    overlay.style.display = 'flex';
-    this.currentInstruction = 0;
-    
-    const nextInstruction = () => {
-      if (this.currentInstruction < this.instructions.length) {
-        instructionText.textContent = this.instructions[this.currentInstruction].text;
-        
-        setTimeout(() => {
-          this.currentInstruction++;
-          
-          if (this.currentInstruction < this.instructions.length) {
-            setTimeout(nextInstruction, 1000);
-          } else {
-            this.completeVerification();
-          }
-        }, 3000);
-      }
-    };
-    
-    nextInstruction();
+    instructionText.innerHTML = `
+      <div class="text-white font-bold text-lg">${this.instructions[0].text}</div>
+      <div class="text-sm mt-2 text-gray-300">Paso 1 de ${this.instructions.length}</div>
+      <div class="text-xs mt-1 text-yellow-300">Debes completar TODOS los pasos</div>
+    `;
   }
   
   async completeVerification() {
+    if (!this.allStepsCompleted) {
+      // Si no completó todos los pasos, reiniciar
+      this.currentInstruction = 0;
+      this.instructions.forEach(inst => inst.completed = false);
+      this.startInstructionSequence();
+      return;
+    }
+    
     const overlay = document.getElementById('age-instruction-overlay');
     const instructionText = document.getElementById('age-instruction-text');
     
     instructionText.innerHTML = `
-      <div class="animate-spin w-8 h-8 border-4 border-white border-t-transparent rounded-full mx-auto mb-2"></div>
-      <p>Analizando edad...</p>
+      <div class="animate-spin w-12 h-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+      <p class="text-white font-bold text-lg">Analizando edad...</p>
+      <p class="text-sm text-gray-300 mt-2">Procesando datos faciales</p>
     `;
     
-    // Simular análisis de edad
-    const ageResult = await this.analyzeAge();
+    // Simular análisis de edad MÁS REALISTA
+    const ageResult = await this.analyzeAgeAdvanced();
+    this.detectedAge = ageResult.estimatedAge;
     
     if (ageResult.isAdult) {
       ageVerificationPassed = true;
       overlay.style.display = 'none';
       
-      showNotification('✓ Verificación de edad completada', 'success');
+      showNotification(`✓ Edad verificada: ${ageResult.estimatedAge} años`, 'success');
       
       setTimeout(() => {
         nextVerificationStep();
       }, 2000);
       
     } else {
-      await this.blockUnderageUser();
+      // BLOQUEO TOTAL ESTILO TIKTOK
+      await this.blockUnderageUserCompletely(ageResult.estimatedAge);
       
       currentVerificationStep = 7;
       updateVerificationStep();
+      
+      // Mostrar edad detectada
+      document.getElementById('detected-age').textContent = ageResult.estimatedAge;
       document.getElementById('underage-result').classList.remove('hidden');
     }
     
     this.stopCamera();
   }
   
-  async analyzeAge() {
+  async analyzeAgeAdvanced() {
     return new Promise((resolve) => {
       setTimeout(() => {
-        // Simulación: 85% de probabilidad de ser adulto
-        const isAdult = Math.random() > 0.15;
-        const estimatedAge = isAdult ? Math.floor(Math.random() * 30) + 18 : Math.floor(Math.random() * 10) + 13;
+        // Simulación más realista basada en completar todos los pasos
+        const baseAge = Math.floor(Math.random() * 50) + 13;
+        
+        // Si completó todos los pasos correctamente, mayor probabilidad de ser adulto
+        const completionBonus = this.allStepsCompleted ? 5 : 0;
+        const finalAge = baseAge + completionBonus;
+        
+        const isAdult = finalAge >= 18;
         
         resolve({
           isAdult: isAdult,
-          estimatedAge: estimatedAge,
-          confidence: 0.92
+          estimatedAge: finalAge,
+          confidence: 0.94
         });
-      }, 3000);
+      }, 4000);
     });
   }
   
-  async blockUnderageUser() {
+  async blockUnderageUserCompletely(detectedAge) {
     const user = firebase.auth().currentUser;
     if (user) {
+      // BLOQUEO TOTAL ESTILO TIKTOK
       await firebase.database().ref('users/' + user.uid).update({
         ageVerified: false,
         isUnderage: true,
+        detectedAge: detectedAge,
         verificationBlocked: true,
         liveStreamingBlocked: true,
-        blockedAt: Date.now()
+        premiumBlocked: true,
+        blockedAt: Date.now(),
+        blockedReason: `Menor de edad detectado: ${detectedAge} años`,
+        permanentBlock: true
       });
       
-      this.disableLiveFeatures();
+      // Deshabilitar TODAS las funciones
+      this.disableAllFeatures();
+      
+      // Mostrar notificación de bloqueo
+      showNotification(`Acceso denegado: ${detectedAge} años detectados`, 'error');
     }
   }
   
-  disableLiveFeatures() {
-    const liveButtons = document.querySelectorAll('[onclick*="openLiveStreamModal"]');
+  disableAllFeatures() {
+    // Deshabilitar transmisiones en vivo
+    const liveButtons = document.querySelectorAll('[onclick*="openLiveStreamModal"], [onclick*="Live"]');
     liveButtons.forEach(button => {
       button.disabled = true;
-      button.classList.add('opacity-50', 'cursor-not-allowed');
+      button.classList.add('opacity-30', 'cursor-not-allowed');
       button.onclick = () => {
-        showNotification('Función no disponible para menores de edad', 'error');
+        showNotification('Función bloqueada: Menor de 18 años', 'error');
       };
+    });
+    
+    // Deshabilitar verificación
+    const verificationButtons = document.querySelectorAll('[onclick*="openVerificationModal"]');
+    verificationButtons.forEach(button => {
+      button.disabled = true;
+      button.classList.add('opacity-30', 'cursor-not-allowed');
+      button.onclick = () => {
+        showNotification('Verificación bloqueada: Menor de 18 años', 'error');
+      };
+    });
+    
+    // Agregar overlay de bloqueo a funciones premium
+    const premiumElements = document.querySelectorAll('[class*="premium"], [id*="premium"]');
+    premiumElements.forEach(element => {
+      element.classList.add('opacity-30', 'pointer-events-none');
     });
   }
   
