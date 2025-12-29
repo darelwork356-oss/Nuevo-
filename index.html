@@ -2501,11 +2501,10 @@ firebase.auth().onAuthStateChanged(user => {
           </svg>
         </button>
         
-        <!-- Botón de ajustes -->
-        <button onclick="openProfileEdit()" class="text-[#FE2C55] p-2 hover:bg-gray-100 rounded-full transition-all">
+        <!-- Botón de menú (3 líneas) -->
+        <button onclick="openSupportModal()" class="text-[#FE2C55] p-2 hover:bg-gray-100 rounded-full transition-all">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
       </div>
@@ -2524,8 +2523,15 @@ firebase.auth().onAuthStateChanged(user => {
 
       </div>
 
-      <!-- Nombre de usuario debajo de la foto -->
-      <h2 id="profile-username" class="text-xl font-semibold mb-4">@nombre_usuario</h2>
+      <!-- Nombre de usuario con botón de editar -->
+      <div class="flex items-center justify-center mb-4">
+        <h2 id="profile-username" class="text-xl font-semibold mr-2">@nombre_usuario</h2>
+        <button onclick="openProfileEdit()" class="text-gray-600 hover:text-[#FE2C55] transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+      </div>
 
       <!-- Estadísticas de seguidores y siguiendo -->
       <div class="flex space-x-8 mb-6">
@@ -2573,9 +2579,9 @@ firebase.auth().onAuthStateChanged(user => {
             </svg>
             Editar perfil
           </button>
-          <button class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all">
+          <button onclick="openSupportModal()" class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
         </div>
@@ -2595,7 +2601,14 @@ firebase.auth().onAuthStateChanged(user => {
 
           <!-- Información del usuario -->
           <div class="flex-1">
-            <h1 id="profile-username-desktop" class="text-3xl font-bold text-white mb-2">@nombre_usuario</h1>
+            <div class="flex items-center mb-2">
+              <h1 id="profile-username-desktop" class="text-3xl font-bold text-white mr-3">@nombre_usuario</h1>
+              <button onclick="openProfileEdit()" class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            </div>
             <p id="profile-location-desktop" class="text-white text-opacity-90 mb-4">Ubicación no especificada</p>
             
             <!-- Estadísticas -->
