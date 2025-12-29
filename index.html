@@ -2944,6 +2944,41 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
+  <!-- Vista desktop -->
+  <div class="hidden lg:flex h-full">
+    <!-- Contenido desktop existente -->
+    <div class="flex-1 p-8">
+      <h2 class="text-2xl font-semibold text-[#FE2C55] mb-8">Editar Perfil</h2>
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de usuario</label>
+          <input id="edit-username-desktop" type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE2C55] focus:border-transparent" placeholder="Tu nombre de usuario">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Biografía</label>
+          <textarea id="edit-bio-desktop" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE2C55] focus:border-transparent" placeholder="Escribe algo sobre ti..."></textarea>
+        </div>
+        <div class="flex space-x-4 pt-6">
+          <button onclick="saveProfileEdits()" class="bg-[#FE2C55] text-white px-8 py-3 rounded-lg hover:bg-[#ef2950] transition-colors font-medium">
+            Guardar Cambios
+          </button>
+          <button onclick="signOutUser()" class="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="w-96 p-8 bg-gray-50">
+      <div class="flex flex-col items-center">
+        <div class="relative mb-6">
+          <img id="edit-profile-image-desktop" src="https://via.placeholder.com/200" class="w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg cursor-pointer" alt="Profile picture" onclick="openPhotoOptionsModal()">
+          <input type="file" id="edit-profile-image-input-desktop" accept="image/*" class="hidden" onchange="handleEditProfileImageUpload(event)">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
   <!-- Vista desktop (nueva estructura) -->
   <div class="hidden lg:flex h-full">
     <!-- Header superior -->
