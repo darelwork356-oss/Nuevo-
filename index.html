@@ -2011,10 +2011,9 @@ setInterval(checkScheduledChapters, 60000);
       <div id="authError" class="mt-4 text-red-500 hidden"></div>
     </div>
   </div>
-</body>
 
 <!-- APLICACIÓN PRINCIPAL ESTILO TIKTOK (MODO CLARO) -->
-<div id="main-app" class="h-screen flex flex-col bg-white font-sans text-black" style="display: none;">
+<div id="main-app" class="h-screen flex flex-col bg-white font-sans text-black hidden">
   <!-- TOP BAR WITH NAME + ICONS -->
   <div id="top-navbar" class="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 z-50 bg-white">
     <h1 id="app-name" class="text-2xl font-bold text-[#161823]">Zenvio</h1>
@@ -8566,8 +8565,9 @@ async function likeNote(noteId) {
           firebase.auth().signOut();
           return;
         }
-        authFormContainer.style.display = 'none';
-        mainAppContainer.style.display = 'flex';
+        authFormContainer.classList.add('hidden');
+        mainAppContainer.classList.remove('hidden');
+        mainAppContainer.style.display = ''; // Clear any inline style
         loadStories();
         loadUserStories(user.uid);
         initializeFeedSections();
@@ -8609,8 +8609,8 @@ async function likeNote(noteId) {
         }
       });
     } else {
-      authFormContainer.style.display = 'flex';
-      mainAppContainer.style.display = 'none';
+      authFormContainer.classList.remove('hidden');
+      mainAppContainer.classList.add('hidden');
     }
   });
   /*********************** AUTENTICACIÓN CON GOOGLE Y FACEBOOK **************************/
@@ -8997,43 +8997,6 @@ async function likeNote(noteId) {
     }
   }
 
-  function openProfile() {
-    showLoader();
-    setTimeout(() => {
-      mainApp.classList.add('hidden');
-      
-      // Ocultar la barra de navegación superior cuando se abre el perfil
-      const topNav = document.getElementById('top-navbar');
-      if (topNav) topNav.style.display = 'none';
-      
-      document.getElementById('profile-view').classList.remove('hidden');
-      hideLoader();
-    }, 300);
-  }
-
-  function openHome() {
-    showLoader();
-    setTimeout(() => {
-      document.getElementById('profile-view').classList.add('hidden');
-      mainApp.classList.remove('hidden');
-      
-      // Mostrar la barra de navegación superior cuando se vuelve al home
-      const topNav = document.getElementById('top-navbar');
-      if (topNav) topNav.style.display = 'flex';
-      
-      hideLoader();
-    }, 300);
-  }
-
-  function openSearch() {
-    mainApp.classList.add('hidden');
-    document.getElementById('search-view').classList.remove('hidden');
-  }
-
-  function closeSearch() {
-    document.getElementById('search-view').classList.add('hidden');
-    mainApp.classList.remove('hidden');
-  }
   function performRealTimeSearch() {
   const query = document.getElementById('search-input').value.trim().toLowerCase();
   const category = document.getElementById('category-filter').value;
@@ -13233,8 +13196,6 @@ function closeZenvioStudio() {
   }
 </script>
 
-</body>
-
 <!-- Story Viewer Modal -->
 <div id="story-viewer">
     <div class="story-content">
@@ -13354,18 +13315,13 @@ firebase.auth().onAuthStateChanged(user => {
     autoMigrateFirebaseData();
   }
 });
-</script>
-
-<script src="stories.js"></script>
-</body>
-</html>
 
 // Manejar formulario de soporte
 document.addEventListener('DOMContentLoaded', function() {
   const supportForm = document.getElementById('support-form');
   const supportDescription = document.getElementById('support-description');
   const charCount = document.getElementById('char-count');
-  
+
   if (supportDescription && charCount) {
     supportDescription.addEventListener('input', function() {
       const count = this.value.length;
@@ -13373,20 +13329,20 @@ document.addEventListener('DOMContentLoaded', function() {
       charCount.style.color = count >= 20 ? '#10a37f' : '#6b7280';
     });
   }
-  
+
   if (supportForm) {
     supportForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      
+
       const email = document.getElementById('support-email').value;
       const problemType = document.getElementById('support-problem-type').value;
       const description = document.getElementById('support-description').value;
-      
+
       if (description.length < 20) {
         alert('La descripción debe tener al menos 20 caracteres');
         return;
       }
-      
+
       // Simular envío
       setTimeout(() => {
         document.querySelector('#support-modal > div:first-child').classList.add('hidden');
@@ -13395,3 +13351,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+</script>
+
+<script src="stories.js"></script>
+</body>
+</html>
