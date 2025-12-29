@@ -2124,12 +2124,28 @@ document.addEventListener('DOMContentLoaded', loadFollowingStories);
 firebase.auth().onAuthStateChanged(user => {
   if (user) {
     loadFollowingStories();
+    // Cargar historias en los carruseles
+    if (typeof loadStories === 'function') {
+      loadStories();
+    }
+    // Cargar historias del usuario
+    if (typeof loadUserStories === 'function') {
+      loadUserStories(user.uid);
+    }
     // Actualizar foto de perfil en barra inferior
     firebase.database().ref('users/' + user.uid).once('value').then(snapshot => {
       const userData = snapshot.val();
-      if (userData && userData.profileImage) {
-        const bottomNavPic = document.getElementById('bottom-nav-profile-pic');
-        if (bottomNavPic) bottomNavPic.src = userData.profileImage;
+      if (userData) {
+        if (userData.profileImage) {
+          const bottomNavPic = document.getElementById('bottom-nav-profile-pic');
+          if (bottomNavPic) bottomNavPic.src = userData.profileImage;
+        }
+        // Actualizar nombre de usuario en perfil
+        const username = userData.username || '@nombre_usuario';
+        const profileUsername = document.getElementById('profile-username');
+        const profileUsernameDesktop = document.getElementById('profile-username-desktop');
+        if (profileUsername) profileUsername.textContent = username;
+        if (profileUsernameDesktop) profileUsernameDesktop.textContent = username;
       }
     });
   }
@@ -7956,6 +7972,23 @@ async function likeNote(noteId) {
     
     document.getElementById('profile-view').classList.remove('hidden');
     loadUserStats(user.uid);
+    
+    // Cargar historias del usuario
+    if (typeof loadUserStories === 'function') {
+      loadUserStories(user.uid);
+    }
+    
+    // Actualizar nombre de usuario
+    firebase.database().ref('users/' + user.uid).once('value').then(snapshot => {
+      const userData = snapshot.val();
+      if (userData) {
+        const username = userData.username || '@nombre_usuario';
+        const profileUsername = document.getElementById('profile-username');
+        const profileUsernameDesktop = document.getElementById('profile-username-desktop');
+        if (profileUsername) profileUsername.textContent = username;
+        if (profileUsernameDesktop) profileUsernameDesktop.textContent = username;
+      }
+    });
   }
 
   function openNotifications() {
