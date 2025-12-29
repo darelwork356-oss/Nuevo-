@@ -5110,16 +5110,20 @@ function selectVerificationMethod(method) {
     card.classList.remove('selected');
   });
   
-  event.target.closest('.verification-method-card').classList.add('selected');
+  if (event && event.target) {
+    event.target.closest('.verification-method-card').classList.add('selected');
+  }
   
   // Avanzar al paso correspondiente
   setTimeout(() => {
     if (method === 'document') {
       currentVerificationStep = 5; // Paso 5A - Documentos
-      document.getElementById('verification-step-5a').classList.remove('hidden');
+      const step5a = document.getElementById('verification-step-5a');
+      if (step5a) step5a.classList.remove('hidden');
     } else {
       currentVerificationStep = 5; // Paso 5B - Selfie avanzado  
-      document.getElementById('verification-step-5b').classList.remove('hidden');
+      const step5b = document.getElementById('verification-step-5b');
+      if (step5b) step5b.classList.remove('hidden');
     }
     updateVerificationStep();
   }, 500);
@@ -5151,10 +5155,12 @@ class SelfieVerificationSystem {
       });
       
       const video = document.getElementById('selfie-video');
-      video.srcObject = stream;
-      faceDetectionStream = stream;
-      
-      this.runInstructionSequence();
+      if (video) {
+        video.srcObject = stream;
+        faceDetectionStream = stream;
+        
+        this.runInstructionSequence();
+      }
       
     } catch (error) {
       console.error('Error accediendo a la cámara:', error);
@@ -5166,54 +5172,60 @@ class SelfieVerificationSystem {
     const overlay = document.getElementById('selfie-overlay');
     const instruction = document.getElementById('selfie-instruction');
     
-    overlay.style.display = 'flex';
-    
-    const nextInstruction = () => {
-      if (this.currentInstruction < this.instructions.length) {
-        instruction.textContent = this.instructions[this.currentInstruction];
-        
-        setTimeout(() => {
-          this.captureImage();
-          this.currentInstruction++;
+    if (overlay && instruction) {
+      overlay.style.display = 'flex';
+      
+      const nextInstruction = () => {
+        if (this.currentInstruction < this.instructions.length) {
+          instruction.textContent = this.instructions[this.currentInstruction];
           
-          if (this.currentInstruction < this.instructions.length) {
-            setTimeout(nextInstruction, 1500);
-          } else {
-            this.completeVerification();
-          }
-        }, 3000);
-      }
-    };
-    
-    nextInstruction();
+          setTimeout(() => {
+            this.captureImage();
+            this.currentInstruction++;
+            
+            if (this.currentInstruction < this.instructions.length) {
+              setTimeout(nextInstruction, 1500);
+            } else {
+              this.completeVerification();
+            }
+          }, 3000);
+        }
+      };
+      
+      nextInstruction();
+    }
   }
   
   captureImage() {
     const video = document.getElementById('selfie-video');
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    
-    const imageData = canvas.toDataURL('image/jpeg', 0.9);
-    this.capturedImages.push(imageData);
+    if (video) {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      
+      const imageData = canvas.toDataURL('image/jpeg', 0.9);
+      this.capturedImages.push(imageData);
+    }
   }
   
   async completeVerification() {
     const overlay = document.getElementById('selfie-overlay');
     const instruction = document.getElementById('selfie-instruction');
     
-    instruction.innerHTML = `
-      <div class="animate-spin w-8 h-8 border-4 border-white border-t-transparent rounded-full mx-auto mb-2"></div>
-      <p>Procesando selfie...</p>
-    `;
+    if (instruction) {
+      instruction.innerHTML = `
+        <div class="animate-spin w-8 h-8 border-4 border-white border-t-transparent rounded-full mx-auto mb-2"></div>
+        <p>Procesando selfie...</p>
+      `;
+    }
     
     // Simular procesamiento
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    overlay.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
     this.stopCamera();
     
     // Avanzar al procesamiento
@@ -5248,20 +5260,27 @@ async function processVerificationResults() {
     const checkElement = document.getElementById(checks[i]);
     const statusElement = document.getElementById('processing-status');
     
-    statusElement.textContent = messages[i] + '...';
+    if (statusElement) {
+      statusElement.textContent = messages[i] + '...';
+    }
     
-    // Cambiar a estado de carga
-    checkElement.classList.remove('text-gray-400');
-    checkElement.classList.add('text-blue-500');
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Cambiar a completado
-    checkElement.classList.remove('text-blue-500');
-    checkElement.classList.add('text-green-500');
-    checkElement.querySelector('svg').innerHTML = `
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-    `;
+    if (checkElement) {
+      // Cambiar a estado de carga
+      checkElement.classList.remove('text-gray-400');
+      checkElement.classList.add('text-blue-500');
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Cambiar a completado
+      checkElement.classList.remove('text-blue-500');
+      checkElement.classList.add('text-green-500');
+      const svg = checkElement.querySelector('svg');
+      if (svg) {
+        svg.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        `;
+      }
+    }
   }
   
   // Mostrar resultado final
@@ -5279,21 +5298,30 @@ function showVerificationResult() {
   const isSuccessful = Math.random() > 0.15;
   
   if (isSuccessful) {
-    document.getElementById('success-result').classList.remove('hidden');
+    const successResult = document.getElementById('success-result');
+    if (successResult) {
+      successResult.classList.remove('hidden');
+    }
     
     // Guardar en Firebase
     const user = firebase.auth().currentUser;
-    if (user) {
+    if (user && typeof firebase !== 'undefined') {
       firebase.database().ref('users/' + user.uid).update({
         verificationStatus: 'pending',
         verificationSubmittedAt: Date.now(),
         ageVerified: ageVerificationPassed
+      }).catch(error => {
+        console.error('Error guardando en Firebase:', error);
       });
     }
   } else {
-    document.getElementById('error-result').classList.remove('hidden');
-    document.getElementById('error-message').textContent = 
-      'No se pudo completar la verificación. Revisa que las imágenes sean claras y los datos correctos.';
+    const errorResult = document.getElementById('error-result');
+    const errorMessage = document.getElementById('error-message');
+    if (errorResult) errorResult.classList.remove('hidden');
+    if (errorMessage) {
+      errorMessage.textContent = 
+        'No se pudo completar la verificación. Revisa que las imágenes sean claras y los datos correctos.';
+    }
   }
 }
 
@@ -5302,6 +5330,10 @@ function stopAllCameras() {
   if (faceDetectionStream) {
     faceDetectionStream.getTracks().forEach(track => track.stop());
     faceDetectionStream = null;
+  }
+  if (camera) {
+    camera.stop();
+    camera = null;
   }
 }
 
@@ -5343,29 +5375,31 @@ function handleFileUpload(input, previewId) {
   }
   
   const previewDiv = document.getElementById(previewId);
-  previewDiv.innerHTML = '';
-  previewDiv.classList.remove('hidden');
-  
-  if (file.type.startsWith('image/')) {
-    const img = document.createElement('img');
-    img.className = 'w-full h-32 object-cover rounded-lg border';
-    img.src = URL.createObjectURL(file);
-    previewDiv.appendChild(img);
-  } else {
-    const fileInfo = document.createElement('div');
-    fileInfo.className = 'bg-gray-100 p-3 rounded-lg border';
-    fileInfo.innerHTML = `
-      <div class="flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
-        <div>
-          <p class="font-medium text-gray-900">${file.name}</p>
-          <p class="text-sm text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+  if (previewDiv) {
+    previewDiv.innerHTML = '';
+    previewDiv.classList.remove('hidden');
+    
+    if (file.type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.className = 'w-full h-32 object-cover rounded-lg border';
+      img.src = URL.createObjectURL(file);
+      previewDiv.appendChild(img);
+    } else {
+      const fileInfo = document.createElement('div');
+      fileInfo.className = 'bg-gray-100 p-3 rounded-lg border';
+      fileInfo.innerHTML = `
+        <div class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <div>
+            <p class="font-medium text-gray-900">${file.name}</p>
+            <p class="text-sm text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+          </div>
         </div>
-      </div>
-    `;
-    previewDiv.appendChild(fileInfo);
+      `;
+      previewDiv.appendChild(fileInfo);
+    }
   }
 }
 
