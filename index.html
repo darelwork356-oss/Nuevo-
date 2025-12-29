@@ -7291,18 +7291,24 @@ document.getElementById('category-filter').addEventListener('change', performRea
     firebase.database().ref('users/' + user.uid).once('value').then(snapshot => {
       const data = snapshot.val() || {};
       
-      // Campos móviles
-      document.getElementById('edit-name').value = data.name || "";
-      document.getElementById('edit-username').value = data.username || "";
-      document.getElementById('edit-pronouns').value = data.pronouns || "";
-      document.getElementById('edit-bio').value = data.bio || "";
-      document.getElementById('edit-instagram').value = data.instagram || "";
-      document.getElementById('edit-tiktok').value = data.tiktokUsername || "";
-      document.getElementById('edit-website').value = data.website || "";
-      document.getElementById('edit-city').value = data.city || "";
-      document.getElementById('edit-gender').value = data.gender || "";
-      document.getElementById('edit-birthday').value = data.birthday || "";
-      document.getElementById('edit-profile-image-mobile').src = data.profileImage || "https://via.placeholder.com/150";
+      // Campos móviles (solo los que existen)
+      const editName = document.getElementById('edit-name');
+      const editUsername = document.getElementById('edit-username');
+      const editPronouns = document.getElementById('edit-pronouns');
+      const editBio = document.getElementById('edit-bio');
+      const editInstagram = document.getElementById('edit-instagram');
+      const editTiktok = document.getElementById('edit-tiktok');
+      const editGender = document.getElementById('edit-gender');
+      const editProfileImageMobile = document.getElementById('edit-profile-image-mobile');
+      
+      if (editName) editName.value = data.name || "";
+      if (editUsername) editUsername.value = data.username || "";
+      if (editPronouns) editPronouns.value = data.pronouns || "";
+      if (editBio) editBio.value = data.bio || "";
+      if (editInstagram) editInstagram.value = data.instagram || "";
+      if (editTiktok) editTiktok.value = data.tiktokUsername || "";
+      if (editGender) editGender.value = data.gender || "";
+      if (editProfileImageMobile) editProfileImageMobile.src = data.profileImage || "https://via.placeholder.com/150";
       
       // Campos desktop
       const usernameDesktop = document.getElementById('edit-username-desktop');
@@ -7409,28 +7415,44 @@ document.getElementById('category-filter').addEventListener('change', performRea
     let updates = {};
     
     if (isMobile) {
+      // Solo campos que existen en móvil
+      const editName = document.getElementById('edit-name');
+      const editUsername = document.getElementById('edit-username');
+      const editPronouns = document.getElementById('edit-pronouns');
+      const editBio = document.getElementById('edit-bio');
+      const editInstagram = document.getElementById('edit-instagram');
+      const editGender = document.getElementById('edit-gender');
+      
       updates = {
-        name: document.getElementById('edit-name')?.value || '',
-        username: document.getElementById('edit-username')?.value || '',
-        pronouns: document.getElementById('edit-pronouns')?.value || '',
-        bio: document.getElementById('edit-bio')?.value || '',
-        instagram: document.getElementById('edit-instagram')?.value || '',
-        website: document.getElementById('edit-website')?.value || '',
-        city: document.getElementById('edit-city')?.value || '',
-        gender: document.getElementById('edit-gender')?.value || '',
-        birthday: document.getElementById('edit-birthday')?.value || ''
+        name: editName?.value || '',
+        username: editUsername?.value || '',
+        pronouns: editPronouns?.value || '',
+        bio: editBio?.value || '',
+        instagram: editInstagram?.value || '',
+        gender: editGender?.value || ''
       };
     } else {
+      // Campos de desktop
+      const editUsernameDesktop = document.getElementById('edit-username-desktop');
+      const editFirstNameDesktop = document.getElementById('edit-first-name-desktop');
+      const editLastNameDesktop = document.getElementById('edit-last-name-desktop');
+      const editBioDesktop = document.getElementById('edit-bio-desktop');
+      const editBirthdayDesktop = document.getElementById('edit-birthday-desktop');
+      const editGenderDesktop = document.getElementById('edit-gender-desktop');
+      const editCityDesktop = document.getElementById('edit-city-desktop');
+      const editWebsiteDesktop = document.getElementById('edit-website-desktop');
+      const editInstagramDesktop = document.getElementById('edit-instagram-desktop');
+      
       updates = {
-        username: document.getElementById('edit-username-desktop')?.value || '',
-        firstName: document.getElementById('edit-first-name-desktop')?.value || '',
-        lastName: document.getElementById('edit-last-name-desktop')?.value || '',
-        bio: document.getElementById('edit-bio-desktop')?.value || '',
-        website: document.getElementById('edit-website-desktop')?.value || '',
-        instagram: document.getElementById('edit-instagram-desktop')?.value || '',
-        city: document.getElementById('edit-city-desktop')?.value || '',
-        gender: document.getElementById('edit-gender-desktop')?.value || '',
-        birthday: document.getElementById('edit-birthday-desktop')?.value || ''
+        username: editUsernameDesktop?.value || '',
+        firstName: editFirstNameDesktop?.value || '',
+        lastName: editLastNameDesktop?.value || '',
+        bio: editBioDesktop?.value || '',
+        birthday: editBirthdayDesktop?.value || '',
+        gender: editGenderDesktop?.value || '',
+        city: editCityDesktop?.value || '',
+        website: editWebsiteDesktop?.value || '',
+        instagram: editInstagramDesktop?.value || ''
       };
     }
     
