@@ -1237,6 +1237,71 @@ setInterval(checkScheduledChapters, 60000);
   </div>
 </div>
 
+<!-- MODAL DE OPCIONES DE FOTO ESTILO INSTAGRAM -->
+<div id="photo-options-modal" class="fixed inset-0 z-[9999] hidden">
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closePhotoOptionsModal()"></div>
+  
+  <!-- Modal que aparece desde abajo -->
+  <div id="photo-options-content" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl transform translate-y-full transition-transform duration-300 ease-out">
+    <div class="p-6">
+      <!-- Indicador de arrastre -->
+      <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
+      
+      <!-- Título -->
+      <h3 class="text-lg font-semibold text-center mb-6 text-gray-900">Foto de perfil</h3>
+      
+      <!-- Opciones -->
+      <div class="space-y-3">
+        <!-- Elegir desde galería -->
+        <button onclick="selectFromGallery()" class="w-full p-4 text-left hover:bg-gray-50 rounded-xl transition-colors flex items-center">
+          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <p class="font-medium text-gray-900">Elegir desde la galería</p>
+            <p class="text-sm text-gray-500">Selecciona una foto existente</p>
+          </div>
+        </button>
+        
+        <!-- Tomar foto -->
+        <button onclick="takePhoto()" class="w-full p-4 text-left hover:bg-gray-50 rounded-xl transition-colors flex items-center">
+          <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="font-medium text-gray-900">Tomar foto</p>
+            <p class="text-sm text-gray-500">Usa la cámara para tomar una nueva foto</p>
+          </div>
+        </button>
+        
+        <!-- Eliminar foto actual -->
+        <button onclick="removeCurrentPhoto()" class="w-full p-4 text-left hover:bg-red-50 rounded-xl transition-colors flex items-center">
+          <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </div>
+          <div>
+            <p class="font-medium text-red-600">Eliminar foto actual</p>
+            <p class="text-sm text-red-400">Volver a la foto por defecto</p>
+          </div>
+        </button>
+      </div>
+      
+      <!-- Botón cancelar -->
+      <button onclick="closePhotoOptionsModal()" class="w-full mt-6 p-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- SPINNER DE CERRAR SESIÓN -->
 <div id="signout-spinner" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
   <i class="fas fa-spinner fa-spin text-4xl" style="color:#58CC02;"></i>
@@ -2833,14 +2898,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </button>
     <div class="flex flex-col items-center">
       <div class="relative">
-        <img id="edit-profile-image-mobile" src="https://via.placeholder.com/150" class="w-24 h-24 rounded-full object-cover border-2 border-[#FE2C55]" alt="Foto de perfil">
-        <button onclick="document.getElementById('edit-profile-image-input').click();" class="absolute bottom-0 right-0 bg-[#FE2C55] text-white rounded-full p-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M12 5v0" />
-            <path d="M12 5a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2 2 2 0 0 1-2-2v0a2 2 0 0 1 2-2z" />
-            <rect x="3" y="7" width="18" height="14" rx="2" ry="2" />
-          </svg>
-        </button>
+        <img id="edit-profile-image-mobile" src="https://via.placeholder.com/150" class="w-24 h-24 rounded-full object-cover border-2 border-[#FE2C55] cursor-pointer" alt="Foto de perfil" onclick="openPhotoOptionsModal()">
         <input type="file" id="edit-profile-image-input" accept="image/*" class="hidden" onchange="handleEditProfileImageUpload(event)">
       </div>
       <!-- Campos móviles reorganizados -->
@@ -3134,13 +3192,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         <div class="flex flex-col items-center">
           <div class="relative mb-6">
-            <img id="edit-profile-image-desktop" src="https://via.placeholder.com/200" class="w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg" alt="Profile picture">
-            <button onclick="document.getElementById('edit-profile-image-input-desktop').click();" class="absolute bottom-4 right-4 bg-[#FE2C55] text-white rounded-full p-3 shadow-lg hover:bg-[#ef2950] transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-            </button>
+            <img id="edit-profile-image-desktop" src="https://via.placeholder.com/200" class="w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg cursor-pointer" alt="Profile picture" onclick="openPhotoOptionsModal()">
             <input type="file" id="edit-profile-image-input-desktop" accept="image/*" class="hidden" onchange="handleEditProfileImageUpload(event)">
           </div>
           
@@ -4058,6 +4110,56 @@ function previewEditCover(event) {
 </div>
 
 <script>
+// Funciones para el modal de opciones de foto
+function openPhotoOptionsModal() {
+  const modal = document.getElementById('photo-options-modal');
+  const content = document.getElementById('photo-options-content');
+  
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    content.classList.remove('translate-y-full');
+  }, 10);
+}
+
+function closePhotoOptionsModal() {
+  const modal = document.getElementById('photo-options-modal');
+  const content = document.getElementById('photo-options-content');
+  
+  content.classList.add('translate-y-full');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+  }, 300);
+}
+
+function selectFromGallery() {
+  const input = document.getElementById('edit-profile-image-input') || document.getElementById('edit-profile-image-input-desktop');
+  input.click();
+  closePhotoOptionsModal();
+}
+
+function takePhoto() {
+  const input = document.getElementById('edit-profile-image-input') || document.getElementById('edit-profile-image-input-desktop');
+  input.setAttribute('capture', 'camera');
+  input.click();
+  closePhotoOptionsModal();
+}
+
+function removeCurrentPhoto() {
+  const mobileImg = document.getElementById('edit-profile-image-mobile');
+  const desktopImg = document.getElementById('edit-profile-image-desktop');
+  const profileImg = document.getElementById('profile-image');
+  const profileImgDesktop = document.getElementById('profile-image-desktop');
+  
+  const defaultImg = 'https://via.placeholder.com/150';
+  
+  if (mobileImg) mobileImg.src = defaultImg;
+  if (desktopImg) desktopImg.src = defaultImg;
+  if (profileImg) profileImg.src = defaultImg;
+  if (profileImgDesktop) profileImgDesktop.src = defaultImg;
+  
+  closePhotoOptionsModal();
+}
+
 // Funciones para el menú de las 3 rayas
 function openMenuModal() {
   document.getElementById('menu-modal').classList.remove('hidden');
